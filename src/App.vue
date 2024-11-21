@@ -110,7 +110,7 @@ export default {
       }
 
       try {
-        const BASE_URL = "http://localhost:3000";
+        const BASE_URL = "https://flood-guard-back.onrender.com";
         const response = await fetch(`${BASE_URL}/api/registerParking`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

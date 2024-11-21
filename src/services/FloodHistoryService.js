@@ -2,7 +2,7 @@
 export const checkFloodHistory = async (lon, lat) => {
   try {
     const response = await fetch(
-      "http://localhost:3000/api/checkFloodHistory",
+      "https://flood-guard-back.onrender.com/api/checkFloodHistory",
       {
         method: "POST",
         headers: {
