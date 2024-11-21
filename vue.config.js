@@ -5,7 +5,7 @@ module.exports = defineConfig({
   devServer: {
     proxy: {
       "/api": {
-        target: "http://localhost:3000", // 백엔드 서버 주소
+        target: "https://flood-guard-back.onrender.com", // 백엔드 서버 주소
         changeOrigin: true,
         logLevel: "debug", // 디버그 로그 활성화
         //https: true,

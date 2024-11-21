@@ -5,54 +5,32 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   console.log("Service Worker activated.");
-});
-
-self.addEventListener("periodicsync", async (event) => {
-  if (event.tag === "risk-alert") {
-    console.log("Periodic sync event received: risk-alert");
-
-    try {
-      // 1. API로 날씨 데이터 가져오기
-      const weatherResponse = await fetch(
-        "http://localhost:3000/api/weather-data"
-      ); // Proxy 사용 불가
-      const weatherData = await weatherResponse.json();
-      const { currentRain, oneHourRain } = weatherData;
-
-      // 2. 위험 평가 API 호출
-      const riskResponse = await fetch(
-        "http://localhost:3000/api/assess-risk",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ currentRain, oneHourRain }),
-        }
-      );
-      const risk = await riskResponse.json();
-
-      // 3. 위험 수준에 따라 알림 표시
-      if (risk.floodRiskLevel > 0) {
-        self.registration.showNotification("침수 위험 경고", {
-          body: risk.alertMessage,
-          icon: `/assets/icons/${risk.riskIcon}`,
-        });
-        console.log("Notification sent:", risk.alertMessage);
-      } else {
-        console.log("No flood risk detected.");
-      }
-    } catch (error) {
-      console.error("Error in periodic sync:", error);
-    }
-  }
+  self.clients.claim(); // 모든 열린 클라이언트에 대해 즉시 서비스 워커가 활성화됨
 });
 
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
   const title = data.title || "알림";
   const options = {
-    body: data.body || "내용 없음",
-    icon: data.icon || "/assets/icons/default-icon.png",
+    body: data.body || "위험 정보 없음",
+    icon: "/assets/icons/default-icon.png", // 아이콘은 필요없음
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 위험도 체크 후 푸시 알림 전송 (프론트에서 전달받은 위험도 정보 처리)
+self.addEventListener("message", async (event) => {
+  if (event.data && event.data.type === "risk-alert") {
+    // 위험도 정보가 들어오면 푸시 알림 전송
+    const { floodRiskLevel, alertMessage } = event.data.data;
+
+    // 위험도 레벨이 0보다 클 경우만 푸시 알림을 보냄
+    if (floodRiskLevel > 0) {
+      self.registration.showNotification("침수 위험 경고", {
+        body: alertMessage, // 위험 메시지만 전달
+        icon: "/assets/icons/default-icon.png", // 아이콘을 없애거나 기본 아이콘 설정
+      });
+    }
+  }
 });

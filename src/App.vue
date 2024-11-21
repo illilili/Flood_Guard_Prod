@@ -89,7 +89,7 @@ export default {
   },
 
   mounted() {
-    // Service Worker 등록
+    // 서비스 워커 등록
     registerServiceWorker(
       "BOr1ZRzOF7UEGY4ylBTfjC6sCUBJuH71QVI_NB_OK3L4DfrHxI5pvbRVmRrcTm8W2s_V-nWxDyidcxEVlk_igwA"
     ).catch((error) => {
@@ -125,6 +125,20 @@ export default {
           throw new Error("Parking location registration failed.");
         }
 
+        // 주차 위치 등록 후 서비스 워커로 위치 전달
+        if (
+          "serviceWorker" in navigator &&
+          navigator.serviceWorker.controller
+        ) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "register-parking-location",
+            data: {
+              lat: this.selectedLocation.lat,
+              lon: this.selectedLocation.lng,
+            },
+          });
+        }
+
         const parkingData = {
           ...this.selectedLocation,
           ...(await response.json()),
@@ -138,11 +152,8 @@ export default {
           this.showParkingMessage = false;
 
           // 주차 메시지가 끝난 뒤 위험도 측정
-          this.checkRiskLevel();
+          this.checkRiskLevel(true); // 첫 위험도 측정 시 UI 업데이트
         }, 2000);
-
-        // 위험도 즉시 확인
-        //await this.checkRiskLevel();
 
         // 주기적 위험 확인
         this.startPeriodicRiskCheck();
@@ -153,27 +164,15 @@ export default {
     },
 
     startPeriodicRiskCheck() {
-      if ("serviceWorker" in navigator && "PeriodicSyncManager" in window) {
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.periodicSync
-            .register("risk-alert", { minInterval: 3600 * 1000 }) // 1시간 간격
-            .then(() => console.log("Periodic sync registered."))
-            .catch((error) =>
-              console.error("Periodic sync registration failed:", error)
-            );
-        });
-      } else {
-        console.warn(
-          "PeriodicSyncManager is not supported. Falling back to setInterval."
-        );
-        if (this.monitorInterval) {
-          clearInterval(this.monitorInterval);
-        }
-        this.monitorInterval = setInterval(() => {
-          console.log("Periodic risk check triggered via fallback.");
-          this.checkRiskLevel();
-        }, 3600000); // 1시간 간격
+      // 1시간마다 위험도를 확인하는 작업을 setInterval로 설정
+      if (this.monitorInterval) {
+        clearInterval(this.monitorInterval);
       }
+
+      this.monitorInterval = setInterval(() => {
+        console.log("Periodic risk check triggered via setInterval.");
+        this.checkRiskLevel(); // 위험도 측정 시 아이콘과 메시지 표시
+      }, 3600000); // 1시간 마다 측정
     },
 
     async checkRiskLevel() {
@@ -186,7 +185,9 @@ export default {
       const { lat, lng } = parkingData;
 
       try {
+        // 날씨 데이터 가져오기
         const weatherData = await getWeatherData(lat, lng);
+        // 위험도 평가
         const { floodRiskLevel, alertMessage, riskIcon } = await assessRisk(
           weatherData.currentRain,
           weatherData.oneHourRain,
@@ -194,15 +195,31 @@ export default {
           lng
         );
 
-        if (floodRiskLevel > 0) {
-          console.log(`Flood Risk Level detected: ${floodRiskLevel}`);
-        }
+        console.log(
+          `Flood Risk Level: ${floodRiskLevel}, Message: ${alertMessage}`
+        );
 
-        // 위험도 메시지 콘솔 출력
-        console.log(alertMessage);
-
+        // 위험도 메시지 출력
         this.riskMessage = alertMessage; // HTML 형태로 바인딩
-        this.updateRiskIcon(riskIcon); // 아이콘 업데이트
+        this.showRiskIcon = true; // 아이콘 표시
+        this.riskIcon = require(`@/assets/${riskIcon}`);
+
+        // 5초 후에 아이콘과 메시지를 숨김
+        setTimeout(() => {
+          this.showRiskIcon = false;
+          this.riskMessage = ""; // 메시지 초기화
+        }, 5000);
+
+        // 서비스 워커로 위험도 정보 전달 (푸시 알림을 위한)
+        if (
+          "serviceWorker" in navigator &&
+          navigator.serviceWorker.controller
+        ) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "risk-alert", // 푸시 알림을 위한 타입
+            data: { floodRiskLevel, alertMessage }, // 위험도 정보
+          });
+        }
       } catch (error) {
         console.error("Error checking risk level:", error);
         alert("위험도 확인 중 오류가 발생했습니다.");
