@@ -3,7 +3,7 @@ import axios from "axios";
 const API_KEY =
   "3U2Vinr+RnlR6KVJFlE5duBEM1IWvJIE+4Px6aUXNdGJNoxSv14X+Rrw5MBq4/8EKqLhR1IT9PYrppCdeCsz/Q==";
 const API_URL =
-  "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
+  "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
 
 // baseTime 계산 함수
 function getClosestBaseTime() {
