@@ -188,12 +188,13 @@ export default {
         // 날씨 데이터 가져오기
         const weatherData = await getWeatherData(lat, lng);
         // 위험도 평가
-        const { floodRiskLevel, alertMessage, riskIcon } = await assessRisk(
-          weatherData.currentRain,
-          weatherData.oneHourRain,
-          lat,
-          lng
-        );
+        const { floodRiskLevel, alertMessage, riskIcon, isRainy } =
+          await assessRisk(
+            weatherData.currentRain,
+            weatherData.oneHourRain,
+            lat,
+            lng
+          );
 
         console.log(
           `Flood Risk Level: ${floodRiskLevel}, Message: ${alertMessage}`
@@ -217,7 +218,7 @@ export default {
         ) {
           navigator.serviceWorker.controller.postMessage({
             type: "risk-alert", // 푸시 알림을 위한 타입
-            data: { floodRiskLevel, alertMessage }, // 위험도 정보
+            data: { floodRiskLevel, alertMessage, isRainy }, // 위험도 정보
           });
         }
       } catch (error) {

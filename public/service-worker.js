@@ -25,15 +25,13 @@ self.addEventListener("push", (event) => {
 // 위험도 체크 후 푸시 알림 전송 (프론트에서 전달받은 위험도 정보 처리)
 self.addEventListener("message", async (event) => {
   if (event.data && event.data.type === "risk-alert") {
-    const { floodRiskLevel, alertMessage, currentRainfall } = event.data.data;
-
-    // 비가 오는지 확인하는 변수
-    const isRainy = currentRainfall > 0; // 강수량이 0보다 크면 비가 오는 것으로 간주
+    const { floodRiskLevel, alertMessage, isRainy } = event.data.data;
 
     if (!firstCheckDone) {
       // 첫 번째 체크에서는 푸시 알림을 보내지 않음
-      console.log("첫 번째 위험도 체크. 푸시 알림을 생략합니다.");
+      console.log("첫 번째 위험도 체크. 푸시 알림 생략");
       firstCheckDone = true; // 첫 체크 완료 상태로 변경
+      wasRainy = isRainy;
       return;
     }
 
