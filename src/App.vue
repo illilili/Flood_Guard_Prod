@@ -172,7 +172,7 @@ export default {
       this.monitorInterval = setInterval(() => {
         console.log("Periodic risk check triggered via setInterval.");
         this.checkRiskLevel(); // 위험도 측정 시 아이콘과 메시지 표시
-      }, 3600000); // 1시간 마다 측정
+      }, 60000); // 1시간 마다 측정
     },
 
     async checkRiskLevel() {
