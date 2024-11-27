@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // 백엔드 API 엔드포인트 설정
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://flood-guard-back.onrender.com";
 
 // 침수 유발 강우량 정보를 가져오는 함수
 async function getFloodThresholds(lat, lon) {
@@ -84,7 +84,7 @@ export async function assessRisk(currentRainfall, oneHourRainfall, lat, lon) {
     console.log(
       `[RiskAssessment] Risk Level: ${floodRiskLevel}, Message: ${alertMessage}`
     );
-    return { floodRiskLevel, alertMessage, riskIcon, isRainy };
+    return { floodRiskLevel, alertMessage, riskIcon, isRainy, currentRainfall };
   } catch (error) {
     console.error("Error assessing risk:", error);
     return {

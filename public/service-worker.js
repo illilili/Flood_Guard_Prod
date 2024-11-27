@@ -1,5 +1,5 @@
 let firstCheckDone = false; // 첫 측정 여부 확인
-//let wasRainy = false; // 이전 상태에서 비가 왔는지 여부
+let wasRainy = false; // 이전 상태에서 비가 왔는지 여부
 
 self.addEventListener("install", (event) => {
   console.log("Service Worker installed.");
@@ -25,7 +25,10 @@ self.addEventListener("push", (event) => {
 // 위험도 체크 후 푸시 알림 전송 (프론트에서 전달받은 위험도 정보 처리)
 self.addEventListener("message", async (event) => {
   if (event.data && event.data.type === "risk-alert") {
-    const { floodRiskLevel, alertMessage } = event.data.data;
+    const { floodRiskLevel, alertMessage, currentRainfall } = event.data.data;
+
+    // 비가 오는지 확인하는 변수
+    const isRainy = currentRainfall > 0; // 강수량이 0보다 크면 비가 오는 것으로 간주
 
     if (!firstCheckDone) {
       // 첫 번째 체크에서는 푸시 알림을 보내지 않음
@@ -34,13 +37,13 @@ self.addEventListener("message", async (event) => {
       return;
     }
 
-    // 비가 안오다가 오기 시작한 경우 알림 전송
-    // if (!wasRainy && isRainy) {
-    //   self.registration.showNotification("비가 시작되었습니다", {
-    //     body: "현재 주차 위치를 확인하세요.",
-    //     icon: "/assets/icons/rain-alert-icon.png",
-    //   });
-    // }
+    // 비가 안 오다가 오기 시작한 경우 알림 전송
+    if (!wasRainy && isRainy) {
+      self.registration.showNotification("비가 시작되었습니다", {
+        body: "현재 주차 위치를 확인하세요.",
+        icon: "/assets/icons/default-icon.pn",
+      });
+    }
 
     // 위험도 레벨이 0보다 클 경우에만 푸시 알림 전송
     if (floodRiskLevel > 0) {
@@ -49,5 +52,8 @@ self.addEventListener("message", async (event) => {
         icon: "/assets/icons/default-icon.png", // 기본 아이콘
       });
     }
+
+    // 현재 상태를 이전 상태로 저장
+    wasRainy = isRainy;
   }
 });
